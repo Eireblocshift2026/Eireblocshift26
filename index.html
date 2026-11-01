@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>body{margin:0}[hidden]{display:none!important}</style>
+<title>Eirebloc Shift Checker</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito+Sans:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: one narrow column, phone first. Green header band, "today" card, date checker, my-team week strip, roster. */
+:root{
+  --bg:#f3f6ef; --surface:#ffffff; --ink:#1f2a1b; --muted:#5d6b56; --line:#dbe3d3;
+  --brand:#3f7a2e; --brand-2:#6a9a3c; --brand-ink:#ffffff; --off:#eef1ea;
+  --A:#d6452f; --B:#2f6fd6; --C:#c9921a; --D:#8a3fc2; --E:#1d9a8a;
+  --display:"Fredoka","Nunito Sans",system-ui,sans-serif;
+  --body:"Nunito Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111710; --surface:#1a2218; --ink:#e7eee2; --muted:#9fae97; --line:#2c3829;
+  --brand:#2f5f22; --brand-2:#87b85a; --brand-ink:#f2f8ec; --off:#222b20;
+  --A:#f0725d; --B:#6aa0f5; --C:#e6b442; --D:#b57ce6; --E:#4cc6b4; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111710; --surface:#1a2218; --ink:#e7eee2; --muted:#9fae97; --line:#2c3829;
+  --brand:#2f5f22; --brand-2:#87b85a; --brand-ink:#f2f8ec; --off:#222b20;
+  --A:#f0725d; --B:#6aa0f5; --C:#e6b442; --D:#b57ce6; --E:#4cc6b4; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+header{background:var(--brand);color:var(--brand-ink);padding-block:22px 54px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:520px;margin:0 auto}
+.brand{font-family:var(--display);font-weight:600;font-size:30px;letter-spacing:.5px;line-height:1}
+.sub{opacity:.85;font-size:13px;margin-top:4px;letter-spacing:.06em;text-transform:uppercase;font-weight:700}
+main{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 32px;margin-top:-38px}
+main .wrap{display:flex;flex-direction:column;gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px}
+.eyebrow{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.date-big{font-family:var(--display);font-weight:600;font-size:22px;margin:2px 0 12px}
+.shifts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.shift{border-radius:12px;padding:12px;color:#fff;min-width:0}
+.shift .lbl{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.92}
+.shift .team{font-family:var(--display);font-weight:600;font-size:34px;line-height:1.1}
+.shift .lead{font-size:13px;opacity:.95;overflow-wrap:anywhere}
+.offrow{margin-top:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:28px;padding:0 8px;border-radius:999px;font-weight:800;color:#fff;font-size:14px}
+.chip.ghost{background:var(--off);color:var(--muted)}
+.picker{display:flex;gap:8px;align-items:center}
+.picker input{flex:1;min-width:0;font:inherit;font-weight:700;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+button{font:inherit;cursor:pointer}
+.nav{width:42px;height:42px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font-size:18px;font-weight:800}
+.todaybtn{border:0;background:var(--brand-2);color:#fff;border-radius:10px;padding:10px 12px;font-weight:800}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--brand-2);outline-offset:2px}
+.teamsel{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 12px}
+.teamsel button{border:2px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 14px;font-weight:800}
+.teamsel button[aria-pressed="true"]{color:#fff;border-color:transparent}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.day{border-radius:10px;padding:6px 2px;text-align:center;background:var(--off);font-size:12px}
+.day .d{font-weight:800;color:var(--muted)}
+.day .n{font-weight:800;font-size:15px}
+.day .s{font-weight:800;font-size:11px;margin-top:2px}
+.day.work{color:#fff}
+.day.work .d{color:#fff;opacity:.9}
+.day.today{outline:2px solid var(--ink);outline-offset:-2px}
+.next{margin-top:12px;font-size:14px}
+.next b{font-weight:800}
+details summary{cursor:pointer;font-weight:800;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details summary::after{content:"+";font-size:20px;color:var(--muted)}
+details[open] summary::after{content:"–"}
+.roster{display:grid;gap:12px;margin-top:12px}
+.rteam h3{margin:0 0 4px;font-family:var(--display);font-weight:600;font-size:17px;display:flex;align-items:center;gap:8px}
+.rteam dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:13px}
+.rteam dt{color:var(--muted)}
+.rteam dd{margin:0;font-weight:700;min-width:0;overflow-wrap:anywhere}
+.cal-head{display:flex;justify-content:space-between;align-items:center;margin:18px 0 8px}
+.cal-head b{font-family:var(--display);font-weight:600;font-size:18px}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+.cal .wd{font-size:11px;font-weight:800;color:var(--muted);text-align:center;padding-bottom:2px}
+.cal button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:4px 0 5px;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
+.cal .num{font-size:12px;font-weight:800}
+.cal .pair{display:flex;flex-direction:column;gap:2px}
+.cal .pair span{width:20px;height:16px;border-radius:4px;color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center}
+.cal button.sel{outline:3px solid var(--ink);outline-offset:-2px}
+.cal button.is-today{border:2px solid var(--brand-2)}
+.legend{font-size:12px;color:var(--muted);margin-top:8px}
+.cal .lb{display:flex;gap:2px;width:100%;padding:0 3px;min-height:12px}
+.cal .lb i{flex:1;font-style:normal;font-size:9px;font-weight:800;color:#fff;border-radius:3px;text-align:center;line-height:12px}
+.cal button.pred-day{border-style:dashed}
+.lbrow{margin-top:10px;display:flex;align-items:center;gap:8px;font-size:14px;padding:8px 10px;border-radius:10px;background:var(--off)}
+.pred{font-size:13px;font-weight:700;color:var(--muted);background:var(--off);border:1px dashed var(--line);border-radius:10px;padding:8px 10px;margin-bottom:10px}
+.next{line-height:1.6}
+.note{font-size:12px;color:var(--muted);text-align:center}
+.bgA{background:var(--A)}.bgB{background:var(--B)}.bgC{background:var(--C)}.bgD{background:var(--D)}.bgE{background:var(--E)}
+@media (prefers-reduced-motion:no-preference){.shift,.day{transition:background-color .2s}}
+</style>
+
+</head>
+<body>
+<header><div class="wrap">
+  <div class="brand">eirebloc</div>
+  <div class="sub">Shift pattern 2026</div>
+</div></header>
+
+<main><div class="wrap">
+
+  <section class="card" aria-labelledby="t-today">
+    <div class="eyebrow" id="t-today">On shift today</div>
+    <div class="date-big" id="todayDate"></div>
+    <div id="todayBody"></div>
+  </section>
+
+  <section class="card" aria-labelledby="t-check">
+    <div class="eyebrow" id="t-check">Check any date</div>
+    <div class="picker" style="margin:10px 0 14px">
+      <button class="nav" id="prev" aria-label="Previous day">‹</button>
+      <input type="date" id="dateInput" min="2026-01-01" max="2026-12-31">
+      <button class="nav" id="next" aria-label="Next day">›</button>
+      <button class="todaybtn" id="goToday">Today</button>
+    </div>
+    <div id="checkBody"></div>
+    <div class="cal-head"><button class="nav" id="mPrev" aria-label="Previous month">‹</button><b id="mLabel"></b><button class="nav" id="mNext" aria-label="Next month">›</button></div>
+    <div class="cal" id="cal"></div>
+    <div class="legend">Tap a day to see its shift. Top letter = Day shift, bottom letter = Night shift. The thin bar underneath = team on its 18-day break.</div>
+  </section>
+
+  <section class="card" aria-labelledby="t-mine">
+    <div class="eyebrow" id="t-mine">My team's week</div>
+    <div class="teamsel" id="teamSel" role="group" aria-label="Choose your team"></div>
+    <div class="week" id="week"></div>
+    <div class="next" id="nextShift"></div>
+  </section>
+
+  <section class="card">
+    <details>
+      <summary>Team members</summary>
+      <div class="roster" id="roster"></div>
+    </details>
+  </section>
+
+  <p class="note">Top row of the wall chart is shown as Day, bottom row as Night. Taken from the 2026 wall chart. Covers 1 Jan – 31 Dec 2026.</p>
+</div></main>
+
+<script>
+const ROWS={ // month: [top row (Day), bottom row (Night)], one letter per date
+1:["EAABBDDEEAACCDDEEAACCDDEEBBCCDD","DEEAABBDDEEAACCDDEEAACCDDEEBBCC"],
+2:["EEBBCCDDAABBCCDDAABBCCEEAABB","DDEEBBCCDDAABBCCDDAABBCCEEAA"],
+3:["CCEEAABBDDEEAABBDDEEAACCDDEEAAC","BBCCEEAABBDDEEAABBDDEEAACCDDEEA"],
+4:["CDDEEBBCCDDEEBBCCDDAABBCCDDAAB","ACCDDEEBBCCDDEEBBCCDDAABBCCDDA"],
+5:["BCCEEAABBCCEEAABBDDEEAABBDDEEAA","ABBCCEEAABBCCEEAABBDDEEAABBDDEE"],
+6:["CCDDEEAACCDDEEBBCCDDEEBBCCDDAA","AACCDDEEAACCDDEEBBCCDDEEBBCCDD"],
+7:["BBCCDDAABBCCEEAABBCCEEAABBDDEEA","AABBCCDDAABBCCEEAABBCCEEAABBDDE"],
+8:["ABBDDEEAACCDDEEAACCDDEEBBCCDDEE","EAABBDDEEAACCDDEEAACCDDEEBBCCDD"],
+9:["BBCCDDAABBCCDDAABBCCEEAABBCCEE","EEBBCCDDAABBCCDDAABBCCEEAABBCC"],
+10:["AABBDDEEAABBDDEEAACCDDEEAACCDDE","EEAABBDDEEAABBDDEEAACCDDEEAACCD"],
+11:["EBBCCDDEEBBCCDDAABBCCDDAABBCCE","DEEBBCCDDEEBBCCDDAABBCCDDAABBC"],
+12:["EAABBCCEEAABBDDEEAABBDDEEAACCDD","CEEAABBCCEEAABBDDEEAABBDDEEAACC"]
+};
+const TEAMS={
+A:[["Team leader","Garrett Young"],["Fitter","Matthew Harris"],["Dry area","Eugene O Connor"],["Dry area","Bartłomiej Woźniak"],["Dry area","Krystian Wolak"],["Wet area","Mariusz Stoklosa"]],
+B:[["Team leader","Francis Monaghan"],["Fitter","Bryan Sanchez"],["Dry area","Ryan Murphy"],["Dry area","Adrian Calago"],["Operator","Adrian Wolak"],["Operator","David"],["Operator","Vitalus"]],
+C:[["Team leader","Michał Woźniak"],["Fitter","Niall McCarthy"],["Dry area","Sebastian Małek"],["Dry area","Fabian-Mihai Postolache"],["Operator","Micheal"],["Wet area","Sylwester Sondej"]],
+D:[["Team leader","Grzegorz Zając"],["Fitter","Rolando Bullos"],["Dry area","Alexander Tatel"],["Dry area","Gleen Merencillo"],["Dry area","Dawid Morawiec"],["Wet area","Bartłomiej Stępień"]],
+E:[["Team leader","Daniel Kazirodek"],["Fitter","Joel Pergis"],["Operator","Scot"],["Dry area","Grzegorz Czaplewski"],["Dry area","Anton Chumakov"],["Wet area","David Watt"]]
+};
+const L="ABCDE".split("");
+const $=id=>document.getElementById(id);
+const pad=n=>String(n).padStart(2,"0");
+const iso=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const parse=s=>{const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d)};
+const addDays=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+const fmt=(d,o)=>d.toLocaleDateString("en-IE",o||{weekday:"long",day:"numeric",month:"long"});
+// The rotation repeats every 70 days: (2 days + 2 nights + 4 off) x6, then 2 days + 2 nights + 18 off.
+const FIRST=new Date(2026,0,1), LAST=new Date(2026,11,31);
+const dn=d=>Math.round(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())/864e5);
+const LB_BASE=dn(new Date(2026,0,8)); // Team B's first 18-day break starts 8 Jan 2026
+const LB_OFF={B:0,A:14,E:28,D:42,C:56};
+function shiftOn(d){
+  let n=dn(d)-dn(FIRST);
+  if(n<0||d>LAST) return null;
+  let predicted=false;
+  while(n>=365){n-=70;predicted=true}
+  const x=addDays(FIRST,n), r=ROWS[x.getMonth()+1], i=x.getDate()-1;
+  return {day:r[0][i],night:r[1][i],predicted};
+}
+const lbPos=(d,t)=>((dn(d)-LB_BASE-LB_OFF[t])%70+70)%70; // 0-17 = inside the 18-day break
+function longBreaks(d){return L.map(t=>({t,k:lbPos(d,t)})).filter(x=>x.k<18)}
+const short=d=>fmt(d,{day:"numeric",month:"short"});
+function renderShift(el,d,showLB){
+  const s=shiftOn(d);
+  if(!s){el.innerHTML='<p style="margin:0;color:var(--muted)">No shift data for this date. The calendar covers 2026 only.</p>';return}
+  const lb=longBreaks(d), lbT=lb.map(x=>x.t);
+  const off=L.filter(t=>t!==s.day&&t!==s.night&&!lbT.includes(t));
+  const box=(lbl,t)=>`<div class="shift bg${t}"><div class="lbl">${lbl}</div><div class="team">Team ${t}</div><div class="lead">${TEAMS[t][0][1]}</div></div>`;
+  el.innerHTML=`${s.predicted?'<div class="pred">Predicted from the 2026 rotation. Check the 2027 wall chart when it goes up.</div>':""}
+    <div class="shifts">${box("Day",s.day)}${box("Night",s.night)}</div>
+    ${(showLB?lb:[]).map(x=>{const st=addDays(d,-x.k);return `<div class="lbrow"><span class="chip bg${x.t}">${x.t}</span><span><b>18-day break</b> · day ${x.k+1} of 18 · ${short(st)} – ${short(addDays(st,17))}</span></div>`}).join("")}
+    <div class="offrow">Off: ${(showLB?off:L.filter(t=>t!==s.day&&t!==s.night)).map(t=>`<span class="chip bg${t}">${t}</span>`).join("")}</div>`;
+}
+const today=new Date(); const todayD=new Date(today.getFullYear(),today.getMonth(),today.getDate());
+$("todayDate").textContent=fmt(todayD);
+renderShift($("todayBody"),todayD,true);
+
+const inRange=d=>d>=FIRST&&d<=LAST;
+const startDate=inRange(todayD)?todayD:FIRST;
+let cur=startDate;
+function setCheck(d){
+  if(!inRange(d)) return;
+  cur=d; $("dateInput").value=iso(d);
+  const b=$("checkBody");
+  renderShift(b,d);
+  b.insertAdjacentHTML("afterbegin",`<div class="date-big" style="margin-top:0">${fmt(d,{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</div>`);
+  viewM=(d.getFullYear()-2026)*12+d.getMonth(); renderCal();
+}
+let viewM=0; // 0 = Jan 2026 ... 23 = Dec 2027
+function renderCal(){
+  const y=2026+Math.floor(viewM/12), m=viewM%12;
+  $("mLabel").textContent=new Date(y,m,1).toLocaleDateString("en-IE",{month:"long",year:"numeric"});
+  $("mPrev").disabled=viewM===0; $("mNext").disabled=viewM===11;
+  let h=["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(w=>`<div class="wd">${w}</div>`).join("");
+  const lead=(new Date(y,m,1).getDay()+6)%7;
+  for(let i=0;i<lead;i++) h+="<div></div>";
+  const n=new Date(y,m+1,0).getDate();
+  for(let i=1;i<=n;i++){
+    const d=new Date(y,m,i), s=shiftOn(d), lb=longBreaks(d);
+    const cls=(iso(d)===iso(cur)?"sel ":"")+(iso(d)===iso(todayD)?"is-today ":"")+(s.predicted?"pred-day":"");
+    h+=`<button type="button" class="${cls}" data-d="${iso(d)}" aria-label="${fmt(d)}: Day ${s.day}, Night ${s.night}${lb.length?", 18-day break "+lb.map(x=>x.t).join(" and "):""}"><span class="num">${i}</span><span class="pair"><span class="bg${s.day}">${s.day}</span><span class="bg${s.night}">${s.night}</span></span><span class="lb">${lb.map(x=>`<i class="bg${x.t}">${x.t}</i>`).join("")}</span></button>`;
+  }
+  $("cal").innerHTML=h;
+  $("cal").querySelectorAll("button").forEach(b=>b.onclick=()=>setCheck(parse(b.dataset.d)));
+}
+$("mPrev").onclick=()=>{if(viewM>0){viewM--;renderCal()}};
+$("mNext").onclick=()=>{if(viewM<11){viewM++;renderCal()}};
+$("dateInput").addEventListener("change",e=>{if(e.target.value)setCheck(parse(e.target.value))});
+$("prev").onclick=()=>setCheck(addDays(cur,-1));
+$("next").onclick=()=>setCheck(addDays(cur,1));
+$("goToday").onclick=()=>setCheck(startDate);
+setCheck(cur);
+
+let mine=null; try{mine=localStorage.getItem("myTeam")}catch(e){}
+if(!L.includes(mine)) mine="A";
+function renderMine(){
+  $("teamSel").innerHTML=L.map(t=>`<button type="button" id="team-${t}" data-t="${t}" aria-pressed="${t===mine}" class="${t===mine?"bg"+t:""}">Team ${t}</button>`).join("");
+  $("teamSel").querySelectorAll("button").forEach(b=>b.onclick=()=>{mine=b.dataset.t;try{localStorage.setItem("myTeam",mine)}catch(e){}renderMine()});
+  let html="";
+  for(let i=0;i<7;i++){
+    const d=addDays(todayD,i), s=shiftOn(d);
+    const w=s&&(s.day===mine?"Day":s.night===mine?"Night":"");
+    html+=`<div class="day ${w?"work bg"+mine:""} ${i===0?"today":""}"><div class="d">${fmt(d,{weekday:"short"})}</div><div class="n">${d.getDate()}</div><div class="s">${w||"Off"}</div></div>`;
+  }
+  $("week").innerHTML=html;
+  let msg="No more shifts found.";
+  for(let i=0;i<800;i++){
+    const d=addDays(todayD,i), s=shiftOn(d); if(!s) continue;
+    const w=s.day===mine?"Day":s.night===mine?"Night":"";
+    if(w){msg=i===0?`Team ${mine} is on <b>${w.toLowerCase()} shift today</b>.`:`Next shift for Team ${mine}: <b>${w} · ${fmt(d)}</b>${i===1?" (tomorrow)":""}.`;break}
+  }
+  const k=lbPos(todayD,mine);
+  let lbMsg;
+  if(k<18){const st=addDays(todayD,-k);lbMsg=`On the <b>18-day break</b> now: ${short(st)} – ${short(addDays(st,17))} (day ${k+1} of 18).`}
+  else if(addDays(todayD,70-k)>LAST){lbMsg="No more 18-day breaks for this team in 2026."}
+  else{const st=addDays(todayD,70-k);lbMsg=`Next 18-day break: <b>${fmt(st,{weekday:"short",day:"numeric",month:"short"})} – ${fmt(addDays(st,17),{weekday:"short",day:"numeric",month:"short",year:"numeric"})}</b> (in ${70-k} days).`}
+  $("nextShift").innerHTML=msg+"<br>"+lbMsg;
+}
+renderMine();
+
+$("roster").innerHTML=L.map(t=>`<div class="rteam"><h3><span class="chip bg${t}">${t}</span>Team ${t}</h3><dl>${TEAMS[t].map(([r,n])=>`<dt>${r}</dt><dd>${n}</dd>`).join("")}</dl></div>`).join("");
+</script>
+
+</body>
+</html>
